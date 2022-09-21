@@ -124,9 +124,6 @@ def getDeltasAndMatrix(Ss,Is, Populations, DAYS, N):
     return MeasurementMatrix, DeltaS
 
 
-
-
-
 N = 50
 
 condNumToNnlsError={}

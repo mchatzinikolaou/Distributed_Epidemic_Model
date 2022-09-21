@@ -92,13 +92,14 @@ class PopulationNet(nx.DiGraph):
             if node.getName() == name:
                 return node
 
-    def testInfect(self):
-        list(self.nodes)[0].TestInfect()
+    def testInfect(self,n=100):
+        list(self.nodes)[0].TestInfect(n)
 
     def advance(self, days=1):
         nodes = self.getNodes()
         for node in nodes:
             node.advanceByDays(days)
+
     def isConnected(self):
         return nx.is_connected(self)
 
@@ -121,13 +122,6 @@ class PopulationNet(nx.DiGraph):
         return self.number_of_nodes() == 0
 
     def departures(self, days=1):
-        """
-        This IS the traffic between the nodes.
-        For each node , get all its neighbours and send travellers according toa  predefined schedule.
-
-        :param days: How many days we want to be ran. This should later change to a schedule, where for
-        each day we retrieve schedule[day], which will be a list of weights for each node.
-        """
         for day in range(1, days):
 
             for node in self.nodes:
@@ -221,15 +215,42 @@ def CreateRandomNetwork(TotalPopulation, p, numberOfNodes=1):
         return
 
     newnet = PopulationNet()
-
     for i in range(0, numberOfNodes):
         newnet.addNode(int(TotalPopulation / numberOfNodes), str(i))
-
     for node1 in newnet.getNodeNames():
         for node2 in newnet.getNodeNames():
             if node1 != node2 and random.random() <= p:
                 newnet.addEdge(node1, node2, 50)
+
     return newnet
+
+
+def CustomNet_manous():
+    net = PopulationNet()
+    Ss=[90,200,300,400,500]
+    i=0
+    for S in Ss:
+        net.addNode(S,i)
+        i+=1
+    for node1 in net.getNodeNames():
+        for node2 in net.getNodeNames():
+            if node1 != node2:
+                net.addEdge(node1, node2, 10)
+
+    net.testInfect(10)
+    net.departures(10)
+
+    for node in net.getNodes():
+        print("Node: ",str(node.name))
+        hist=node.getHistory()
+
+        S=[i[0] for i in hist]
+        I=[i[1] for i in hist]
+        R=[i[2] for i in hist]
+        print(f"S: {S}")
+        print(f"I: {I}")
+        print(f"R: {R}")
+        print()
 
 def plotHistory(History):
     S = []
@@ -398,29 +419,35 @@ def run1():
 
     fig, axs = plt.subplots(2, 2)
     axs[0][0].plot(t, Ss[0],t,Is[0],t,Rs[0])
-    axs[0][0].set_title('First node')
+    axs[0][0].set_title('First node',fontsize=18.0)
     axs[0][0].grid()
 
 
     axs[0][1].plot(t, Ss[1],t,Is[1],t,Rs[1])
-    axs[0][1].set_title('Second node')
+    axs[0][1].set_title('Second node',fontsize=18.0)
     axs[0][1].grid()
 
     axs[1][0].plot(t, Ss[2],t,Is[2],t,Rs[2])
-    axs[1][0].set_title('Third node')
+    axs[1][0].set_title('Third node',fontsize=18.0)
     axs[1][0].grid()
 
     axs[1][1].plot(t, np.sum(Ss,0),t,np.sum(Is,0),t,np.sum(Rs,0))
-    axs[1][1].set_title('Total')
+    axs[1][1].set_title('Total',fontsize=18.0)
     axs[1][1].grid()
 
 
 
-    plt.setp(axs[-1, :], xlabel='day')
-    plt.setp(axs[:, 0], ylabel='population')
+    # plt.setp(axs[-1, :], xlabel='day')
+    # plt.setp(axs[:, 0], ylabel='population')
 
+    axs[1][0].set_xlabel('Day', fontsize=18.0)
+    axs[1][1].set_xlabel('Day', fontsize=18.0)
+
+
+    axs[0][0].set_ylabel('Population', fontsize=18.0)
+    axs[1][0].set_ylabel('Population', fontsize=18.0)
 
 
     plt.show()
 
-
+# runAndPlot(N=1)

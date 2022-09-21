@@ -3,41 +3,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.ndimage import uniform_filter1d
 
-
-# DONE
-# Basic SIR in single Population
-# Migration between populations
-# Calculate traveling population categories (multinomial distribution in "travel packets")
-
-
-# Regression
-# Train a neural net
-
 class PopulationNode:
-    """
-    Population Node.
-    This class represents the progress in an isolated population has all the functionality to model the progress within
-    the population , as well as the traffic of this population to and from others.
 
-    """
 
     def __init__(self, total_Population, name, beta=0.2, gamma=0.05):
-        """
-        Initialize the node.
-        This is used to create a new node with some name and parameters beta and gamma (for the SIR model, this will
-        be expanded and eventually generalized to create any model.)
-
-
-        :param total_Population: Initial population.
-        :param name: This is the identifier of the node. Can be a real name or some artificial ID.
-        :param beta: beta parameter of the SIR model
-        :param gamma: gamma parameter of the SIR model
-
-        We also initialize a list "history" which is used to story the progress so far.
-        """
 
         # Demographics
         self.Population = total_Population
+        self.InitialPopulation=total_Population
         self.S = 1.0
         self.I = 0.0
         self.R = 0.0
@@ -49,52 +22,10 @@ class PopulationNode:
         self.PopulationHistory = []
         self.gotInfected=False
 
-    # def biasedAdvanceByDays(self, S_bias, I_bias, R_bias, days=1):
-    #     """
-    #             Progress the epidemic by specified amount of days (defaults to 1 day per step).
-    #
-    #             Changes S ,I , R and the rest of the parameters according to the specified model.
-    #             (This should be , again , generalized)
-    #
-    #             :param days: the amount of days we want to progress the solution.
-    #             :return: the progress through these days.
-    #             """
-    #     z = []
-    #     S_old = self.S
-    #     I_old = self.I
-    #     R_old = self.R
-    #     for day in range(0, days):
-    #         # progress according to the model
-    #         self.S += -np.multiply(np.multiply(self.b , S_old) , I_old)
-    #         self.I += np.multiply(np.multiply(self.b , S_old) , I_old) - np.multiply(self.g , I_old)
-    #         self.R += np.multiply(self.g , I_old)
-    #
-    #
-    #
-    #         self.TravelFrom(S_bias, I_bias, R_bias)
-    #         # update history.
-    #         self.S = max(self.S, 0)
-    #         z.append([np.multiply(self.S , self.Population), np.multiply(self.I , self.Population), np.multiply(self.R , self.Population)])
-    #
-    #         # renew percentages for the next day.
-    #         S_old = self.S
-    #         I_old = self.I
-    #         R_old = self.R
-    #
-    #     self.history = self.history + z
-    #     [self.S, self.I, self.R] = self.normalize([self.S, self.I, self.R])
-    #     return z
 
     def advanceByDays(self, days=1):
-        """
-        Progress the epidemic by specified amount of days (defaults to 1 day per step).
 
-        Changes S ,I , R and the rest of the parameters according to the specified model.
-        (This should be , again , generalized)
 
-        :param days: the amount of days we want to progress the solution.
-        :return: the progress throughout these days.
-        """
         if not self.gotInfected and self.I>0:
             self.gotInfected = True
         z = []
@@ -103,15 +34,18 @@ class PopulationNode:
         R_old = self.R
         for day in range(0, days):
             # progress according to the model
-            self.S += -self.b * S_old * I_old
-            self.I += self.b * S_old * I_old - self.g * I_old
+            self.S += -self.b *(self.Population/self.InitialPopulation) * S_old * I_old
+            self.I += self.b *(self.Population/self.InitialPopulation) * S_old * I_old - self.g * I_old
             self.R += self.g * I_old
+
+            # self.S += -self.b * S_old * I_old
+            # self.I += self.b  * S_old * I_old - self.g * I_old
+            # self.R += self.g * I_old
 
             # update history.
             self.S = max(self.S, 0)
             self.I = max(self.I, 0)
-            z.append([int(self.S * self.Population + 0.5), int(self.I * self.Population + 0.5),
-                      int(self.R * self.Population + 0.5)])
+            z.append([int(self.S * self.Population + 0.5), int(self.I * self.Population + 0.5),int(self.R * self.Population + 0.5)])
 
             # renew percentages for the next day.
             S_old = self.S
@@ -169,16 +103,17 @@ class PopulationNode:
 
         # remove passenger population from this node.
         # calculate using absolute values
-        S_total = round(np.multiply(self.S, self.Population) - dS)
+        S_total = (np.multiply(self.S, self.Population) - dS)
         if S_total < 0:
             S_total = 0
-        I_total = round(np.multiply(self.I, self.Population) - dI)
+        I_total = (np.multiply(self.I, self.Population) - dI)
         if I_total < 0:
             I_total = 0
-        R_total = round(np.multiply(self.R, self.Population) - dR)
+        R_total = (np.multiply(self.R, self.Population) - dR)
         if R_total < 0:
             R_total = 0
         self.Population -= (dS + dI + dR)
+
         # update percentages.
         [self.S, self.I, self.R] = self.normalize([S_total, I_total, R_total])
         return infected
@@ -193,11 +128,11 @@ class PopulationNode:
         """
 
         # Add absolute values
-        S_total = round(np.multiply(self.S, self.Population) + dS)
+        S_total = (np.multiply(self.S, self.Population) + dS)
 
-        I_total = round(np.multiply(self.I, self.Population) + dI)
+        I_total = (np.multiply(self.I, self.Population) + dI)
 
-        R_total = round(np.multiply(self.R, self.Population) + dR)
+        R_total = (np.multiply(self.R, self.Population) + dR)
         self.Population += (dS + dI + dR)
 
         # recalculate percentages
@@ -212,9 +147,9 @@ class PopulationNode:
 
         :param dI:
         """
-        S_total = round(np.multiply(self.S, self.Population)) + 0
-        I_total = round(np.multiply(self.I, self.Population)) + dI
-        R_total = round(np.multiply(self.R, self.Population)) + 0
+        S_total = (np.multiply(self.S, self.Population)) + 0
+        I_total = (np.multiply(self.I, self.Population)) + dI
+        R_total = (np.multiply(self.R, self.Population)) + 0
         self.Population += dI
 
         # recalculate percentages
@@ -246,20 +181,7 @@ class PopulationNode:
         assert self.I + self.S + self.R == 1, "Population quotients don't sum up to 1"
 
 
-# def calculateBetaBiased(history, bS):
-#     S = [i[0] for i in history]
-#     I = [i[1] for i in history]
-#     beta_calculated = []
-#
-#     for t in range(1, len(S)):
-#         population = sum(history[t])
-#         # The increased S without the bias, the bias is added afterwards
-#         St_init = S[t] - bS
-#         St_1 = S[t - 1]
-#         It_1 = I[t - 1]
-#         denom = np.multiply(St_1, It_1)
-#         beta_calculated.append(np.multiply(np.divide(bS, denom * population) - np.divide(St_init - St_1, denom), population))
-#     return np.median(beta_calculated)
+
 
 def addNormalNoise(history,sigma=1):
     S=[i[0] for i in history]
@@ -349,50 +271,50 @@ def ExponentialNoiseTest(truebeta=0.2,max_lambda=200,min_lambda=1,points=80,MAX_
     return [error, lambdas]
 
 
-# def RunNoiseTests():
-#
-#     R0 = 1
-#     [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
-#     fig, axs = plt.subplots(3, 2)
-#     axs[0, 0].plot(sigmas, error)
-#     axs[0, 0].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
-#     axs[0, 0].grid(axis='y', which='major')
-#
-#
-#     print("done ",R0)
-#     R0 = 1.2
-#     [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
-#     axs[0, 1].plot(sigmas, error)
-#     axs[0, 1].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
-#     axs[0, 1].grid(axis='y', which='major')
-#     print("done ", R0)
-#     R0 = 1.5
-#     [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
-#     axs[1, 0].plot(sigmas, error)
-#     axs[1, 0].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
-#     axs[1, 0].grid(axis='y', which='major')
-#     print("done ", R0)
-#     R0 = 2
-#     [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
-#     axs[1, 1].plot(sigmas, error)
-#     axs[1, 1].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
-#     axs[1, 1].grid(axis='y', which='major')
-#     print("done ", R0)
-#     R0 = 4
-#     [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
-#     axs[2, 0].plot(sigmas, error)
-#     axs[2, 0].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
-#     axs[2, 0].grid(axis='y', which='major')
-#     print("done ", R0)
-#     R0 = 8
-#     [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
-#     axs[2, 1].plot(sigmas, error)
-#     axs[2, 1].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
-#     axs[2, 1].grid(axis='y', which='major')
-#     print("done ", R0)
-#     plt.suptitle("Estimation error vs standard deviation (30 days rolling average) ", fontsize=14)
-#
-#     plt.show()
+def RunNoiseTests():
+
+    R0 = 1
+    [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
+    fig, axs = plt.subplots(3, 2)
+    axs[0, 0].plot(sigmas, error)
+    axs[0, 0].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
+    axs[0, 0].grid(axis='y', which='major')
+
+
+    print("done ",R0)
+    R0 = 1.2
+    [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
+    axs[0, 1].plot(sigmas, error)
+    axs[0, 1].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
+    axs[0, 1].grid(axis='y', which='major')
+    print("done ", R0)
+    R0 = 1.5
+    [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
+    axs[1, 0].plot(sigmas, error)
+    axs[1, 0].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
+    axs[1, 0].grid(axis='y', which='major')
+    print("done ", R0)
+    R0 = 2
+    [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
+    axs[1, 1].plot(sigmas, error)
+    axs[1, 1].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
+    axs[1, 1].grid(axis='y', which='major')
+    print("done ", R0)
+    R0 = 4
+    [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
+    axs[2, 0].plot(sigmas, error)
+    axs[2, 0].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
+    axs[2, 0].grid(axis='y', which='major')
+    print("done ", R0)
+    R0 = 8
+    [error, sigmas] = ExponentialNoiseTest(truebeta=np.multiply(R0, 0.05))
+    axs[2, 1].plot(sigmas, error)
+    axs[2, 1].set_title('beta =' + str(R0 * 0.05) + ' , R0 = ' + str(R0))
+    axs[2, 1].grid(axis='y', which='major')
+    print("done ", R0)
+    plt.suptitle("Estimation error vs standard deviation (30 days rolling average) ", fontsize=14)
+
+    plt.show()
 
 
 def betaGammaSingleNode(History):
@@ -450,14 +372,43 @@ def SingleNodeExamples():
 
         axs[int(i / 2), i % 2].plot(x_axis, [x[0] for x in history], x_axis, [x[1] for x in history], x_axis,
                                     [x[2] for x in history])
-        axs[int(i / 2), i % 2].set_title("R0=" + str(R0))
-        axs[int(i / 2), i % 2].set_xlabel('Day')
-        axs[int(i / 2), i % 2].set_ylabel('Population')
+        axs[int(i / 2), i % 2].set_title("R0=" + str(R0),fontsize = 18.0)
+        axs[int(i / 2), i % 2].set_xlabel('Day',fontsize = 18.0) if i>1 else None
+        axs[int(i / 2), i % 2].set_ylabel('Population',fontsize = 18.0) if i%2!=1 else None
         axs[int(i / 2), i % 2].legend(['Susceptibles', 'Infectious', 'Removed'])
+
         parameters = betaGammaSingleNode(history)
         betas.append(parameters[0])
         gammas.append(parameters[1])
 
+
     plt.suptitle("Epidemic progress vs R0")
     plt.show()
     return betas, gammas
+
+def SingleNodeExample():
+
+    beta=0.4
+    gamma=0.2
+    days=500
+    testNode = PopulationNode(1e06, name="Athens", beta=beta, gamma=gamma)
+    testNode.TestInfect(10)
+    testNode.advanceByDays(days)
+    history = testNode.getHistory()
+
+    plt.title("Epidemic progress for 500 days")
+    x=range(days)
+    plt.plot(x, [x[0] for x in history], x, [x[1] for x in history], x,
+         [x[2] for x in history])
+
+    plt.show()
+    return history
+
+# #history=SingleNodeExample()
+# S=[i[0] for i in history]
+# I=[i[1] for i in history]
+# R=[i[2] for i in history]
+#
+# print(S)
+# print(I)
+# print(R)

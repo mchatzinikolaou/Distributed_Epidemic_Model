@@ -1,3 +1,4 @@
+import math
 from random import random
 import multiprocessing as mp
 import matplotlib.pyplot as plt
@@ -237,7 +238,7 @@ def noiseExperiment(file_dir, l=50, repeats=10, n_min=1, n_max=5):
             DAYS = 2000
             truebetas, truegammas = betaGamas1(n)
 
-            network = generateGraph(truebetas, truegammas, mean_deg=1, num_nodes=n)
+            network = generateGraph(truebetas, truegammas, mean_deg=2, num_nodes=n)
             network.testInfect()
             network.departures(DAYS)
 
@@ -451,7 +452,7 @@ def runExperiment(func, Nmin=1, Nmax=50, repeats=15, proc_num=6, deg=1):
             procs[i].join()
 
 
-def runNoiseExperiment(func, Nmin=1, Nmax=50, repeats=15, proc_num=6, l=50):
+def runNoiseExperiment(func, Nmin=1, Nmax=50, repeats=15, proc_num=6, l=50.0):
     procs = []
     chunks = []
     limits = [int(np.sqrt(i)) for i in np.linspace(np.square(Nmin), np.square(Nmax + 1), num=proc_num + 1)]
@@ -597,8 +598,8 @@ def plotResultsCases(num=6, nmin=1, nmax=-1):
     showFigure(max_N_vals, nmin, nmax, max_means, max_vals, title="Maximum simultaneous cases")
     showFigure(total_N_vals, nmin, nmax, total_means, total_vals, title="Total cases")
 
-l=100
+l=math.inf
 if __name__ == "__main__":
     numproc = mp.cpu_count()
-    #runNoiseExperiment(func=noiseExperiment, Nmin=25, Nmax=35, repeats=20, proc_num=numproc, l=l)
-    plotNoiseResults(num=numproc,l=l,nmax=50)
+    runNoiseExperiment(func=noiseExperiment, Nmin=10, Nmax=30, repeats=10, proc_num=numproc, l=10)
+    plotNoiseResults(num=numproc,l=l,nmax=10)
