@@ -34,18 +34,19 @@ class PopulationNode:
         R_old = self.R
         for day in range(0, days):
             # progress according to the model
-            self.S += -self.b *(self.Population/self.InitialPopulation) * S_old * I_old
-            self.I += self.b *(self.Population/self.InitialPopulation) * S_old * I_old - self.g * I_old
-            self.R += self.g * I_old
-
-            # self.S += -self.b * S_old * I_old
-            # self.I += self.b  * S_old * I_old - self.g * I_old
+            # self.S += -self.b *(self.Population/self.InitialPopulation) * S_old * I_old
+            # self.I += self.b *(self.Population/self.InitialPopulation) * S_old * I_old - self.g * I_old
             # self.R += self.g * I_old
+
+            self.S += -self.b * S_old * I_old
+            self.I += self.b * S_old * I_old - self.g * I_old
+            self.R += self.g * I_old
 
             # update history.
             self.S = max(self.S, 0)
             self.I = max(self.I, 0)
-            z.append([int(self.S * self.Population + 0.5), int(self.I * self.Population + 0.5),int(self.R * self.Population + 0.5)])
+            # z.append([int(self.S * self.Population + 0.5), int(self.I * self.Population + 0.5),int(self.R * self.Population + 0.5)])
+            z.append([self.S * self.Population ,self.I * self.Population ,self.R * self.Population ])
 
             # renew percentages for the next day.
             S_old = self.S
@@ -404,7 +405,7 @@ def SingleNodeExample():
     plt.show()
     return history
 
-# #history=SingleNodeExample()
+# history=SingleNodeExample()
 # S=[i[0] for i in history]
 # I=[i[1] for i in history]
 # R=[i[2] for i in history]

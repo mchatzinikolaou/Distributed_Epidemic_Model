@@ -601,5 +601,6 @@ def plotResultsCases(num=6, nmin=1, nmax=-1):
 l=math.inf
 if __name__ == "__main__":
     numproc = mp.cpu_count()
-    runNoiseExperiment(func=noiseExperiment, Nmin=10, Nmax=30, repeats=10, proc_num=numproc, l=10)
+    numproc = 5
+    runNoiseExperiment(func=noiseExperiment, Nmin=60, Nmax=70, repeats=10, proc_num=numproc, l=l)
     plotNoiseResults(num=numproc,l=l,nmax=10)
