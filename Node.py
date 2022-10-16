@@ -23,7 +23,7 @@ class PopulationNode:
         self.gotInfected=False
 
 
-    def advanceByDays(self, days=1):
+    def advanceByDays(self, days=1,dt=1/10):
 
 
         if not self.gotInfected and self.I>0:
@@ -33,29 +33,22 @@ class PopulationNode:
         I_old = self.I
         R_old = self.R
         for day in range(0, days):
-            # progress according to the model
-            # self.S += -self.b *(self.Population/self.InitialPopulation) * S_old * I_old
-            # self.I += self.b *(self.Population/self.InitialPopulation) * S_old * I_old - self.g * I_old
-            # self.R += self.g * I_old
+            for t in np.linspace(0,1,num=int(1/dt)):
+                self.S += (-self.b * S_old * I_old)                  *dt
+                self.I += (self.b * S_old * I_old - self.g * I_old) *dt
+                self.R += (self.g * I_old)                          *dt
 
-            self.S += -self.b * S_old * I_old
-            self.I += self.b * S_old * I_old - self.g * I_old
-            self.R += self.g * I_old
 
-            # update history.
-            self.S = max(self.S, 0)
-            self.I = max(self.I, 0)
-            # z.append([int(self.S * self.Population + 0.5), int(self.I * self.Population + 0.5),int(self.R * self.Population + 0.5)])
-            z.append([self.S * self.Population ,self.I * self.Population ,self.R * self.Population ])
 
-            # renew percentages for the next day.
-            S_old = self.S
-            I_old = self.I
-            R_old = self.R
+                # [self.S, self.I, self.R] = self.normalize([self.S, self.I, self.R])
 
+                S_old = self.S
+                I_old = self.I
+                R_old = self.R
+
+            z.append([self.S * self.Population, self.I * self.Population, self.R * self.Population])
         self.history = self.history + z
 
-        [self.S, self.I, self.R] = self.normalize([self.S, self.I, self.R])
         return z
 
     def plotNodeHistory(self):
@@ -387,29 +380,97 @@ def SingleNodeExamples():
     plt.show()
     return betas, gammas
 
-def SingleNodeExample():
+def SingleNodeExample(dt):
 
     beta=0.4
     gamma=0.2
     days=500
     testNode = PopulationNode(1e06, name="Athens", beta=beta, gamma=gamma)
     testNode.TestInfect(10)
-    testNode.advanceByDays(days)
-    history = testNode.getHistory()
+    testNode.advanceByDays(days,dt=dt)
 
-    plt.title("Epidemic progress for 500 days")
-    x=range(days)
-    plt.plot(x, [x[0] for x in history], x, [x[1] for x in history], x,
-         [x[2] for x in history])
+    # plt.title("Epidemic progress for 500 days")
+    # x=range(days)
+    # plt.plot(x, [x[0] for x in history], x, [x[1] for x in history], x,
+    #      [x[2] for x in history])
+    #
+    # plt.show()
+    return testNode.getHistory()
 
-    plt.show()
-    return history
 
-# history=SingleNodeExample()
-# S=[i[0] for i in history]
-# I=[i[1] for i in history]
-# R=[i[2] for i in history]
-#
-# print(S)
-# print(I)
-# print(R)
+results={}
+for dt in (100,200,400,2000):
+    history=SingleNodeExample(dt=1/dt)
+    S=[i[0] for i in history]
+    I=[i[1] for i in history]
+    R=[i[2] for i in history]
+    results[dt]=[S,I,R]
+
+correct=results[2000]
+correctS=correct[0]
+correctI=correct[1]
+correctR=correct[2]
+s=range(len(correctS))
+
+
+
+error_100_S=(np.subtract(correctS,results[100][0]))
+error_100_I=(np.subtract(correctI,results[100][1]))
+error_100_R=(np.subtract(correctR,results[100][2]))
+
+error_200_S=(np.subtract(correctS,results[200][0]))
+error_200_I=(np.subtract(correctI,results[200][1]))
+error_200_R=(np.subtract(correctR,results[200][2]))
+
+error_400_S=(np.subtract(correctS,results[400][0]))
+error_400_I=(np.subtract(correctI,results[400][1]))
+error_400_R=(np.subtract(correctR,results[400][2]))
+
+plt.title('Absolute error, N=1e06, dt=1/100,R0=2')
+plt.plot(s, error_100_S, 'r-', s,error_100_I, 'g-', s, error_100_R, 'b-')
+plt.legend(labels=['S error', 'I error', 'R error'])
+plt.grid()
+plt.show()
+
+plt.title('Absolute error, N=1e06, dt=1/200,R0=2')
+plt.plot(s, error_200_S, 'r-', s,error_200_I, 'g-', s, error_200_R, 'b-')
+plt.legend(labels=['S error', 'I error', 'R error'])
+plt.grid()
+plt.show()
+
+plt.title('Absolute error, N=1e06, dt=1/400,R0=2')
+plt.plot(s, error_400_S, 'r-', s,error_400_I, 'g-', s, error_400_R, 'b-')
+plt.legend(labels=['S error', 'I error', 'R error'])
+plt.grid()
+plt.show()
+
+
+error_100_S=np.divide((error_100_S),correctS)
+error_100_I=np.divide(error_100_I,correctI)
+error_100_R=np.divide(error_100_R,correctR)
+
+error_200_S=np.divide(error_200_S,correctS)
+error_200_I=np.divide(error_200_I,correctI)
+error_200_R=np.divide(error_200_R,correctR)
+
+error_400_S=np.divide(error_400_S,correctS)
+error_400_I=np.divide(error_400_I,correctI)
+error_400_R=np.divide(error_400_R,correctR)
+
+plt.title('Relative error, N=1e06, dt=1/100,R0=2')
+plt.plot(s, error_100_S, 'r-', s,error_100_I, 'g-', s, error_100_R, 'b-')
+plt.legend(labels=['S error', 'I error', 'R error'])
+plt.grid()
+plt.show()
+
+plt.title('Relative error, N=1e06, dt=1/200,R0=2')
+plt.plot(s, error_200_S, 'r-', s,error_200_I, 'g-', s, error_200_R, 'b-')
+plt.legend(labels=['S error', 'I error', 'R error'])
+plt.grid()
+plt.show()
+
+plt.title('Relative error, N=1e06, dt=1/400,R0=2')
+plt.plot(s, error_400_S, 'r-', s,error_400_I, 'g-', s, error_400_R, 'b-')
+plt.legend(labels=['S error', 'I error', 'R error'])
+plt.grid()
+plt.show()

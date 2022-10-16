@@ -32,7 +32,7 @@ def showFigure(N_vals, nmin, nmax, means, vals, title):
         , name="error values"
 
     ))
-    fig.update_xaxes(title_text='node number')
+    fig.update_xaxes(title_text='number of nodes')
     fig.update_yaxes(title_text='error', tickangle=90)
     fig.add_trace(go.Scatter(
         x=sorted(N_vals)[nmin:nmax],
@@ -41,7 +41,7 @@ def showFigure(N_vals, nmin, nmax, means, vals, title):
         name="mean values"
     ))
 
-    fig.update_layout(title_text=f"{title} relative error vs. node number")
+    fig.update_layout(title_text=f"{title} relative error vs. number of nodes")
     fig.write_image(f"./images/fig{title}.png")
     fig.show()
 
@@ -531,11 +531,20 @@ def plotNoiseResults(nmin=0, nmax=-1, num=6, l=50):
     gamma_N_vals = [float(i) for i in NtoNnlsErrorGamma.keys()]
     beta_vals = [i for i in NtoNnlsErrorBeta.values()]
     gamma_vals = [i for i in NtoNnlsErrorGamma.values()]
+
+
+
     beta_means = [np.mean(i) for i in beta_vals]
     gamma_means = [np.mean(i) for i in gamma_vals]
 
     showFigure(beta_N_vals, nmin, nmax, beta_means, beta_vals, title="beta")
     showFigure(gamma_N_vals, nmin, nmax, gamma_means, gamma_vals, title="gamma")
+
+    # beta_medians = [np.median(i) for i in beta_vals]
+    # gamma_medians = [np.median(i) for i in gamma_vals]
+    #
+    # showFigure(beta_N_vals, nmin, nmax, beta_medians, beta_vals, title="beta")
+    # showFigure(gamma_N_vals, nmin, nmax, gamma_medians, gamma_vals, title="gamma")
 
 
 def plotResults2(num=6):
@@ -592,15 +601,25 @@ def plotResultsCases(num=6, nmin=1, nmax=-1):
     max_vals = [i for i in MaxError.values()]
 
     total_vals = [i for i in TotalError.values()]
+
+
     max_means = [np.mean(i) for i in max_vals]
     total_means = [np.mean(i) for i in total_vals]
 
     showFigure(max_N_vals, nmin, nmax, max_means, max_vals, title="Maximum simultaneous cases")
     showFigure(total_N_vals, nmin, nmax, total_means, total_vals, title="Total cases")
 
+    # max_medians = [np.median(i) for i in max_vals]
+    # total_medians = [np.median(i) for i in total_vals]
+    #
+    # showFigure(max_N_vals, nmin, nmax, max_medians, max_vals, title="Maximum simultaneous cases")
+    # showFigure(total_N_vals, nmin, nmax, total_medians, total_vals, title="Total cases")
+
+
+
+
 l=math.inf
 if __name__ == "__main__":
     numproc = mp.cpu_count()
-    numproc = 5
-    runNoiseExperiment(func=noiseExperiment, Nmin=60, Nmax=70, repeats=10, proc_num=numproc, l=l)
-    plotNoiseResults(num=numproc,l=l,nmax=10)
+    #runNoiseExperiment(func=noiseExperiment, Nmin=20, Nmax=60, repeats=5, proc_num=numproc, l=l)
+    plotNoiseResults(num=numproc,l=l,nmax=60)
