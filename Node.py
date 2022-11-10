@@ -6,7 +6,7 @@ from scipy.ndimage import uniform_filter1d
 class PopulationNode:
 
 
-    def __init__(self, total_Population, name, beta=0.2, gamma=0.05):
+    def __init__(self, total_Population, name, beta=0.2, gamma=0.05,dt=1):
 
         # Demographics
         self.Population = total_Population
@@ -21,11 +21,12 @@ class PopulationNode:
         self.history = []
         self.PopulationHistory = []
         self.gotInfected=False
+        self.dt=dt
 
 
     def advanceByDays(self, days=1,dt=1/10):
 
-
+        dt=self.dt
         if not self.gotInfected and self.I>0:
             self.gotInfected = True
         z = []
@@ -330,7 +331,7 @@ def betaGammaSingleNode(History):
         It = np.divide(History[t + 1][1], NodePopulation)
         It_1 = np.divide(History[t][1], NodePopulation)
 
-        d_beta = - np.divide((St - St_1), (np.multiply(St_1, It_1)))
+        d_beta = - np.divide( (St - St_1), (np.multiply(St_1, It_1)) )
         d_gamma = 1 - np.divide(It, It_1) + np.multiply(d_beta, St_1)
 
         xToError[t]=(d_beta-0.2)/0.2
@@ -343,8 +344,8 @@ def betaGammaSingleNode(History):
         # REMOVE
 
 
-    beta = np.median(betas)
-    gamma = np.median(gammas)
+    beta = np.mean(betas)
+    gamma = np.mean(gammas)
 
     return [beta, gamma]
 
@@ -380,12 +381,12 @@ def SingleNodeExamples():
     plt.show()
     return betas, gammas
 
-def SingleNodeExample(dt):
+def SingleNodeExample(dt,days=150):
 
-    beta=0.4
+    beta=0.5
     gamma=0.2
-    days=500
-    testNode = PopulationNode(1e06, name="Athens", beta=beta, gamma=gamma)
+    days=days
+    testNode = PopulationNode(1e06, name="Athens", beta=beta, gamma=gamma,dt=dt)
     testNode.TestInfect(10)
     testNode.advanceByDays(days,dt=dt)
 
@@ -397,80 +398,103 @@ def SingleNodeExample(dt):
     # plt.show()
     return testNode.getHistory()
 
+def single(days=300):
+    results={}
+    beta_gamma_erros={}
+    beta_and_gammas=[]
+    for dt in reversed((200,400,2000)):
+        history=SingleNodeExample(dt=days/dt,days=days)
+        S=[i[0] for i in history]
+        I=[i[1] for i in history]
+        R=[i[2] for i in history]
 
-results={}
-for dt in (100,200,400,2000):
-    history=SingleNodeExample(dt=1/dt)
-    S=[i[0] for i in history]
-    I=[i[1] for i in history]
-    R=[i[2] for i in history]
-    results[dt]=[S,I,R]
+        print(f"for dt= {dt} : I({days})={I[-1]}")
 
-correct=results[2000]
-correctS=correct[0]
-correctI=correct[1]
-correctR=correct[2]
-s=range(len(correctS))
-
-
-
-error_100_S=(np.subtract(correctS,results[100][0]))
-error_100_I=(np.subtract(correctI,results[100][1]))
-error_100_R=(np.subtract(correctR,results[100][2]))
-
-error_200_S=(np.subtract(correctS,results[200][0]))
-error_200_I=(np.subtract(correctI,results[200][1]))
-error_200_R=(np.subtract(correctR,results[200][2]))
-
-error_400_S=(np.subtract(correctS,results[400][0]))
-error_400_I=(np.subtract(correctI,results[400][1]))
-error_400_R=(np.subtract(correctR,results[400][2]))
-
-plt.title('Absolute error, N=1e06, dt=1/100,R0=2')
-plt.plot(s, error_100_S, 'r-', s,error_100_I, 'g-', s, error_100_R, 'b-')
-plt.legend(labels=['S error', 'I error', 'R error'])
-plt.grid()
-plt.show()
-
-plt.title('Absolute error, N=1e06, dt=1/200,R0=2')
-plt.plot(s, error_200_S, 'r-', s,error_200_I, 'g-', s, error_200_R, 'b-')
-plt.legend(labels=['S error', 'I error', 'R error'])
-plt.grid()
-plt.show()
-
-plt.title('Absolute error, N=1e06, dt=1/400,R0=2')
-plt.plot(s, error_400_S, 'r-', s,error_400_I, 'g-', s, error_400_R, 'b-')
-plt.legend(labels=['S error', 'I error', 'R error'])
-plt.grid()
-plt.show()
+        if dt!= 2000:
+            print(f"Error : {100*(I[-1]-correct)/correct} %")
+        else:
+            correct=I[-1]
+        print()
 
 
-error_100_S=np.divide((error_100_S),correctS)
-error_100_I=np.divide(error_100_I,correctI)
-error_100_R=np.divide(error_100_R,correctR)
+        # beta_gammas=betaGammaSingleNode(history)
+        # beta_and_gammas.append(beta_gammas)
+        # beta_gamma_erros[dt]=np.array(np.divide(np.subtract(beta_gammas,[0.4,0.2]),[0.4,0.2]))
+        # results[dt]=[S,I,R]
+        # print(f"error for dt=1/{dt}: {np.divide(np.subtract(beta_gammas,beta_and_gammas[0]),beta_and_gammas[0])}")
 
-error_200_S=np.divide(error_200_S,correctS)
-error_200_I=np.divide(error_200_I,correctI)
-error_200_R=np.divide(error_200_R,correctR)
 
-error_400_S=np.divide(error_400_S,correctS)
-error_400_I=np.divide(error_400_I,correctI)
-error_400_R=np.divide(error_400_R,correctR)
 
-plt.title('Relative error, N=1e06, dt=1/100,R0=2')
-plt.plot(s, error_100_S, 'r-', s,error_100_I, 'g-', s, error_100_R, 'b-')
-plt.legend(labels=['S error', 'I error', 'R error'])
-plt.grid()
-plt.show()
 
-plt.title('Relative error, N=1e06, dt=1/200,R0=2')
-plt.plot(s, error_200_S, 'r-', s,error_200_I, 'g-', s, error_200_R, 'b-')
-plt.legend(labels=['S error', 'I error', 'R error'])
-plt.grid()
-plt.show()
+single()
 
-plt.title('Relative error, N=1e06, dt=1/400,R0=2')
-plt.plot(s, error_400_S, 'r-', s,error_400_I, 'g-', s, error_400_R, 'b-')
-plt.legend(labels=['S error', 'I error', 'R error'])
-plt.grid()
-plt.show()
+def CaseErrors(correct):
+
+    correctS=correct[0]
+    correctI=correct[1]
+    correctR=correct[2]
+    s=range(len(correctS))
+
+
+
+    error_100_S=(np.subtract(correctS,results[100][0]))
+    error_100_I=(np.subtract(correctI,results[100][1]))
+    error_100_R=(np.subtract(correctR,results[100][2]))
+
+    error_200_S=(np.subtract(correctS,results[200][0]))
+    error_200_I=(np.subtract(correctI,results[200][1]))
+    error_200_R=(np.subtract(correctR,results[200][2]))
+
+    error_400_S=(np.subtract(correctS,results[400][0]))
+    error_400_I=(np.subtract(correctI,results[400][1]))
+    error_400_R=(np.subtract(correctR,results[400][2]))
+
+    plt.title('Absolute error, N=1e06, dt=1/100,R0=2')
+    plt.plot(s, error_100_S, 'r-', s,error_100_I, 'g-', s, error_100_R, 'b-')
+    plt.legend(labels=['S error', 'I error', 'R error'])
+    plt.grid()
+    plt.show()
+
+    plt.title('Absolute error, N=1e06, dt=1/200,R0=2')
+    plt.plot(s, error_200_S, 'r-', s,error_200_I, 'g-', s, error_200_R, 'b-')
+    plt.legend(labels=['S error', 'I error', 'R error'])
+    plt.grid()
+    plt.show()
+
+    plt.title('Absolute error, N=1e06, dt=1/400,R0=2')
+    plt.plot(s, error_400_S, 'r-', s,error_400_I, 'g-', s, error_400_R, 'b-')
+    plt.legend(labels=['S error', 'I error', 'R error'])
+    plt.grid()
+    plt.show()
+
+
+    error_100_S=np.divide((error_100_S),correctS)
+    error_100_I=np.divide(error_100_I,correctI)
+    error_100_R=np.divide(error_100_R,correctR)
+
+    error_200_S=np.divide(error_200_S,correctS)
+    error_200_I=np.divide(error_200_I,correctI)
+    error_200_R=np.divide(error_200_R,correctR)
+
+    error_400_S=np.divide(error_400_S,correctS)
+    error_400_I=np.divide(error_400_I,correctI)
+    error_400_R=np.divide(error_400_R,correctR)
+
+    plt.title('Relative error, N=1e06, dt=1/100,R0=2')
+    plt.plot(s, error_100_S, 'r-', s,error_100_I, 'g-', s, error_100_R, 'b-')
+    plt.legend(labels=['S error', 'I error', 'R error'])
+    plt.grid()
+    plt.show()
+
+    plt.title('Relative error, N=1e06, dt=1/200,R0=2')
+    plt.plot(s, error_200_S, 'r-', s,error_200_I, 'g-', s, error_200_R, 'b-')
+    plt.legend(labels=['S error', 'I error', 'R error'])
+    plt.grid()
+    plt.show()
+
+    plt.title('Relative error, N=1e06, dt=1/400,R0=2')
+    plt.plot(s, error_400_S, 'r-', s,error_400_I, 'g-', s, error_400_R, 'b-')
+    plt.legend(labels=['S error', 'I error', 'R error'])
+    plt.grid()
+    plt.show()
+

@@ -51,14 +51,14 @@ def split(a, n):
     return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
-def generateGraph(betas, gammas, mean_deg=1, num_nodes=20):
+def generateGraph(betas, gammas, mean_deg=1, num_nodes=20,dt=1):
     InitialPopulations = 1e04 * np.ones(num_nodes)
     Populations = InitialPopulations
 
     network = pn()
 
     for i in range(0, num_nodes):
-        network.addNode(Populations[i], str(i), betas[i], gammas[i])
+        network.addNode(Populations[i], str(i), betas[i], gammas[i],dt)
         for j in range(0, i):
 
             if random() < mean_deg / (num_nodes - 1):
@@ -615,11 +615,59 @@ def plotResultsCases(num=6, nmin=1, nmax=-1):
     # showFigure(max_N_vals, nmin, nmax, max_medians, max_vals, title="Maximum simultaneous cases")
     # showFigure(total_N_vals, nmin, nmax, total_medians, total_vals, title="Total cases")
 
+def singleNode(dt=1/2000):
 
+    DAYS = 2000
+    n=1
+    degree=0
+    truebetas, truegammas = betaGamas1(n)
+    [truebetas, truegammas] = [[0.4],[0.2]]
+    network = generateGraph(truebetas, truegammas, mean_deg=degree, num_nodes=n,dt=dt)
+    network.testInfect()
+    network.departures(DAYS)
 
+    [_, Ss, Is, Rs, Populations] = getHistories(network, DAYS, n)
+    [MeasurementMatrix, DeltaS, IMatrix, DeltaR] = getDeltasAndMatrix(Ss, Is, Rs, Populations, DAYS, n)
+    MeasurementMatrix = np.array(MeasurementMatrix)
+    IMatrix = np.array(IMatrix)
+    DeltaS = np.array(DeltaS)
+    DeltaR = np.array(DeltaR)
 
-l=math.inf
+    nnls_betas = nnls(MeasurementMatrix, DeltaS, maxiter=100 * len(MeasurementMatrix))[0]
+    nnls_gammas = nnls(IMatrix, DeltaR, maxiter=100 * len(IMatrix))[0]
+
+    i = 0
+    idx = []
+    for node in network.getNodes():
+        idx.append(i) if node.gotInfected else None
+        i = i + 1
+
+    b_idx = idx
+    g_idx = idx
+
+    b_c = len(b_idx)
+    g_c = len(g_idx)
+
+    nnls_betas = [nnls_betas[i] for i in b_idx]
+    nnls_gammas = [nnls_gammas[i] for i in g_idx]
+    truebetas = [truebetas[i] for i in b_idx]
+    truegammas = [truegammas[i] for i in g_idx]
+
+    BetaErrors = np.divide((np.subtract(nnls_betas, truebetas)), truebetas)
+    GammaErrors = np.divide((np.subtract(nnls_gammas, truegammas)), truegammas)
+
+    print(f"Beta error for dt=1/{1//dt}: {BetaErrors}")
+    print(f"Gamma error dt=1/{1//dt}: {GammaErrors}")
+    return [nnls_betas,nnls_gammas]
+
 if __name__ == "__main__":
+    for i in range(2001,0,-100):
+        results=singleNode(dt=1/i)
+        print(f'calculated {results[0]}{results[1]}')
+
+
+else:
+    l=math.inf
     numproc = mp.cpu_count()
     #runNoiseExperiment(func=noiseExperiment, Nmin=20, Nmax=60, repeats=5, proc_num=numproc, l=l)
     plotNoiseResults(num=numproc,l=l,nmax=60)

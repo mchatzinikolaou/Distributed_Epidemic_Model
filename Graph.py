@@ -14,16 +14,16 @@ class PopulationNet(nx.DiGraph):
         super().__init__()
         self.infectionEvents = []
 
-    def addNode(self, Population, Name, beta=0.5, gamma=0.15):
+    def addNode(self, Population, Name, beta=0.5, gamma=0.15,dt=1):
         """
         Adds a new node to the network.
         :param Population: The population of the node
         :param Name: The name of the node.
         """
         if beta is None and gamma is None:
-            NewPopNode = Node.PopulationNode(Population, Name)
+            NewPopNode = Node.PopulationNode(Population, Name,dt=1)
         else:
-            NewPopNode = Node.PopulationNode(Population, Name, beta, gamma)
+            NewPopNode = Node.PopulationNode(Population, Name, beta, gamma,dt=1)
 
         self.add_node(NewPopNode)
         return NewPopNode
